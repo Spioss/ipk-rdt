@@ -1,6 +1,6 @@
-CC=gcc
-CFLAGS=-std=c11 -Wall -Wextra -Werror -pedantic -O2
-TARGET=ipk-rdt
+CC = gcc
+CFLAGS  = -std=c17 -Wall -Wextra -Wpedantic -O2 -D_POSIX_C_SOURCE=200809L
+TARGET = ipk-rdt
 
 SRC=$(wildcard src/*.c)
 OBJ=$(SRC:.c=.o)
