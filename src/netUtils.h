@@ -12,7 +12,7 @@
 typedef struct {
     struct sockaddr_storage addr;
     socklen_t addrlen;
-} addr_t;
+} addr;
 
 // Create a bound UDP server socket. If bind_addr is NULL, binds to all interfaces.
 // Returns fd on success, -1 on error. 
@@ -21,16 +21,16 @@ int create_server(const char *bind_addr, uint16_t port);
 // Resolve host:port and create connected UDP client socket.
 // Fills out *srv_addr with the server address.
 // Returns fd on success, -1 on error. */
-int create_client(const char *host, uint16_t port, addr_t *srv_addr);
+int create_client(const char *host, uint16_t port, addr *srv_addr);
 
 // end encoded pkt to addr. Returns bytes sent or -1.
-int send(int fd, const pkt_t *pkt, const addr_t *dst);
+int send_pkt(int fd, const pkt *pkt, const addr *dst);
 
 // Receive a packet. Fills pkt and src. Returns true if packet valid. 
-bool recieve(int fd, pkt_t *pkt, addr_t *src);
+bool recieve_pkt(int fd, pkt *pkt, addr *src);
 
 // Compare two addr_t for equality (address and port).
-bool addr_equal(const addr_t *a, const addr_t *b);
+bool addr_equal(const addr *a, const addr *b);
 
 // Return milliseconds elapsed since ts (using CLOCK_MONOTONIC).
 long elapsed_ms(const struct timespec *ts);

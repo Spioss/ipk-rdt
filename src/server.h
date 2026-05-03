@@ -2,6 +2,7 @@
 #define SERVER_H
 
 #include <stdint.h>
+#include "netUtils.h"
 #include "protocol.h"
 
 typedef struct {
@@ -34,17 +35,17 @@ typedef struct {
     uint32_t conn_id; // id of the connection
     uint32_t client_initial; // client initial sequence number
     uint32_t server_initial; // server initial sequence number
-    addr_t client_addr; // client addresss
+    addr client_addr; // client addresss
  
     rcv_slot rcv_buf[WINDOW_SIZE]; // recieve window for out of order data pkts
     uint32_t rcv_expected; // next expected byte offset
 
     bool synack_pending; // retransmition of synack 
-    long synack_rto;
+    long synack_rto; //max
     struct timespec synack_ts;
 
     bool finack_sent; // retransmition of finack
-    long finack_rto;
+    long finack_rto; //max
     struct timespec finack_ts;
     uint32_t fin_seq;
 

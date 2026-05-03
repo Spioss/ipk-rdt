@@ -13,7 +13,7 @@
 #include "protocol.h"
 
 
-static int create_server(const char *bind_addr, uint16_t port){
+int create_server(const char *bind_addr, uint16_t port){
   struct addrinfo hints, *res, *rp;
 
   // port -> string for getaddrinfo
@@ -70,7 +70,7 @@ static int create_server(const char *bind_addr, uint16_t port){
   return fd_socket;
 }
 
-int create_client(const char *host, uint16_t port, addr_t *srv_addr){
+int create_client(const char *host, uint16_t port, addr *srv_addr){
   struct addrinfo hints, *res, *rp;
   // port -> string for getaddrinfo
   char port_str[8];
@@ -80,7 +80,7 @@ int create_client(const char *host, uint16_t port, addr_t *srv_addr){
   hints.ai_family = AF_UNSPEC; // ipv4/ipv6
   hints.ai_socktype = SOCK_DGRAM; // udp
 
-  int response = getaddrinfo(host, port_str, &hints, &response);
+  int response = getaddrinfo(host, port_str, &hints, &res);
   if(response != 0){ 
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(response));
     return -1;
@@ -95,26 +95,26 @@ int create_client(const char *host, uint16_t port, addr_t *srv_addr){
     memcpy(&srv_addr->addr, rp->ai_addr, rp->ai_addrlen);
     srv_addr->addrlen = rp->ai_addrlen;
     break;
-    }
+  }
 
-    freeaddrinfo(res);
+  freeaddrinfo(res);
 
-    if (fd_socket < 0) {
-      fprintf(stderr, "could not create UDP socket: %s\n", strerror(errno));
-      return -1;
-    }
+  if (fd_socket < 0) {
+    fprintf(stderr, "could not create UDP socket: %s\n", strerror(errno));
+    return -1;
+  }
 
-    return fd_socket;
+  return fd_socket;
 }
 
-int send(int fd, const pkt *pkt, const addr_t *dst){
+int send_pkt(int fd, const pkt *pkt, const addr *dst){
   uint8_t buf[MAX_PDU];
   int len = pkt_encode(pkt, buf);
   ssize_t s = sendto(fd, buf, len, 0, (const struct sockaddr *)&dst->addr, dst->addrlen);
   return (int)s;
 }
 
-bool recieve(int fd, pkt *pkt, addr_t *src){
+bool recieve_pkt(int fd, pkt *pkt, addr *src){
   uint8_t buf[MAX_PDU + 64]; // Extra space to detect oversized pkts
   src->addrlen = sizeof(src->addr);
   ssize_t n = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&src->addr, &src->addrlen);
@@ -125,7 +125,7 @@ bool recieve(int fd, pkt *pkt, addr_t *src){
   return pkt_decode(buf, pkt, (int)n);
 }
 
-bool addr_equal(const addr_t *a, const addr_t *b){
+bool addr_equal(const addr *a, const addr *b){
   if (a->addrlen != b->addrlen) return false;
 
   const struct sockaddr *sa = (const struct sockaddr *)&a->addr;
