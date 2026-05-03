@@ -6,9 +6,7 @@
 #include "protocol.h"
 
 // CRC32 algorithm
-// Computes a CRC32 checksum for packet integrity verification.
-// Uses the standard reversed CRC-32 polynomial 0xEDB88320.
-
+// computes a CRC32 checksum for packet integrity verification.
 static uint32_t crc32_table[256];
 static int crc32_table_ready = 0;
 
@@ -61,8 +59,8 @@ static uint32_t read_u32(const  uint8_t *buf){
 }
 
 // pkt_encode
-// takes a `pkt_t` (C structure) and writes it to a byte array in big-endian format
-// Big-endian = the most significant byte comes first 
+// takes a pkt and writes it to a byte array in big-endian format
+// big-endian = the most significant byte comes first 
 bool pkt_decode(const uint8_t *buf, pkt *pkt, int len){
   if(len < HDR_SIZE) return false; // not even complete header
 

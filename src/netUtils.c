@@ -52,7 +52,7 @@ int create_server(const char *bind_addr, uint16_t port){
 
     setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)); // allows the port to be reused immediately
 
-    // Dual-stack: also accept IPv4-mapped connections
+    // dualstack: also accept ipv4
     if (rp->ai_family == AF_INET6) setsockopt(fd_socket, IPPROTO_IPV6, IPV6_V6ONLY, &(int){0}, sizeof(int));
 
     if(bind(fd_socket, rp->ai_addr, rp->ai_addrlen) == 0) break; // binded socket

@@ -118,6 +118,7 @@ static int handle_fin(int fd, server_ctx *ctx, const pkt *pkt){
   now_ts(&ctx->finack_ts);
   ctx->finack_sent = true;
   ctx->finack_rto = 200;
+  ctx->state = SS_FIN_RECEIVED;
   now_ts(&ctx->progress_ts);
   fprintf(stderr, "FIN recieved, sending FIN-ACK\n");
   return 0;
@@ -224,23 +225,27 @@ static int handle_retransmits(int fd, server_ctx *ctx){
       now_ts(&ctx->synack_ts);
     }
   }
-
+  
   if(ctx->finack_sent){
     if(elapsed_ms(&ctx->finack_ts) >= ctx->finack_rto){
       // final ack lost
-      fprintf(stderr, "Transfer complete (final ACK lost)\n");
-      return 1; // success via timeout -> run_server returns exit 0
+      if(elapsed_ms(&ctx->progress_ts) >= (long)ctx->timeout_s * 1000){
+          fprintf(stderr, "Transfer complete (final ACK lost)\n");
+          return 1; // success via timeout -> run_server returns exit 0
+      }
+      
+      // retransmit FINACK
+      send_controlPkt(fd, PKT_FINACK, ctx->conn_id, ctx->server_initial + 1, ctx->fin_seq + 1, &ctx->client_addr);
+      ctx->finack_rto *= 2;
+      if(ctx->finack_rto > RTO_MAX_MS) ctx->finack_rto = RTO_MAX_MS;
+      now_ts(&ctx->finack_ts);
     }
-
-    send_controlPkt(fd, PKT_FINACK, ctx->conn_id, ctx->server_initial, ctx->client_initial + 1, &ctx->client_addr);
-    ctx->finack_rto *= 2;
-    if(ctx->finack_rto > RTO_MAX_MS) ctx->finack_rto = RTO_MAX_MS;
-    now_ts(&ctx->finack_ts);
   }
 
   return 0;
 }
 
+ 
 
 // just check if global timeout was fullfilled or not
 static int check_progress_timeout(server_ctx *ctx){
@@ -289,7 +294,7 @@ int run_server(const server_config *cfg){
     FD_SET(fd_serverSocket, &rfds);
     int sel = select(fd_serverSocket + 1, &rfds, NULL, NULL, &tv);
     if(sel < 0){
-      if(errno = EINTR) continue;
+      if(errno == EINTR) continue;
       fprintf(stderr, "select: %s\n", strerror(errno));
       close(fd_serverSocket);
       return 1;

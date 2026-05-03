@@ -10,10 +10,13 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(OBJ)
 
-test:
+test-protocol:
 	$(CC) $(CFLAGS) -o tests/test_protocol src/protocol.c tests/test_protocol.c
 	./tests/test_protocol
 	rm -f tests/test_protocol
+
+test:
+	bash tests/test.sh
 
 clean:
 	rm -f $(OBJ) $(TARGET)

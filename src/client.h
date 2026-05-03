@@ -21,7 +21,7 @@ typedef enum {
     CS_DONE
 } client_state;
 
-/* One slot in the send window */
+// one slot in the send window 
 typedef struct {
     uint8_t         data[MAX_PAYLOAD];
     uint32_t        seq;
@@ -32,7 +32,7 @@ typedef struct {
     bool            in_use;
 } send_slot;
 
-/* RTT estimator (RFC 6298) */
+// RTT estimator (RFC 6298)
 typedef struct {
     double srtt;
     double rttvar;
@@ -40,7 +40,7 @@ typedef struct {
     bool   seeded;
 } rtt;
 
-// Client context
+// client context
 typedef struct {
     client_state    state; // current state 
     uint32_t        conn_id; // id of the connection

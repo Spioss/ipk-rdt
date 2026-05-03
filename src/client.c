@@ -66,9 +66,9 @@ static int handle_connecting(int fd, client_ctx *ctx, const pkt *pkt){
   return 0;
 }
 
-// state: CS_TRANSFERING - recieved ACK from server
+// state: CS_TRANSFERING (recieved ACK from server)
 static int handle_ack(int fd, client_ctx *ctx, const pkt *pkt){
-  (void)fd;
+  (void)fd; // uh oh
 
   if(pkt->hdr.type != PKT_ACK) return 0;
 
@@ -80,7 +80,7 @@ static int handle_ack(int fd, client_ctx *ctx, const pkt *pkt){
     
     // seq + len <= ack
     if(ctx->window[i].seq + ctx->window[i].len <= pkt->hdr.ack){
-      // Karn's algorithm - we do not count retransmitted packets
+      // Karn's algorithm - not count retransmitted packets
       if(ctx->window[i].retransmits == 0){
         long sample = elapsed_ms(&ctx->window[i].sent_at);
         rtt_update(&ctx->rtt, sample);
@@ -112,7 +112,7 @@ static int handle_finack(int fd, client_ctx *ctx, const pkt *pkt){
   return 0;
 }
 
-// Main dispatch 
+// main dispatch 
 static int process_packet(int fd, client_ctx *ctx){
   pkt recieved_pkt;
   addr src;
@@ -120,6 +120,12 @@ static int process_packet(int fd, client_ctx *ctx){
   if(!recieve_pkt(fd, &recieved_pkt, &src)) return 0;
 
   if(recieved_pkt.hdr.conn_id != ctx->conn_id) return 0;
+
+  // if(ctx->state == CS_CONNECTING){
+  //   return handle_connecting(fd, ctx, &recieved_pkt);
+  // }
+  // if(ctx->state == CS_TRANSFERRING)
+
 
   switch(ctx->state){
     case CS_CONNECTING:
@@ -204,7 +210,7 @@ static int retransmit_window(int fd, client_ctx *ctx){
     memcpy(pkt.data, ctx->window[i].data, ctx->window[i].len);
     send_pkt(fd, &pkt, &ctx->srv_addr);
 
-    // exponencial backoff
+    // backoff
     ctx->window[i].retransmits++;
     ctx->window[i].rto_ms *= 2;
     if (ctx->window[i].rto_ms > RTO_MAX_MS) ctx->window[i].rto_ms = RTO_MAX_MS;
@@ -240,7 +246,7 @@ static int retransmit_fin(int fd, client_ctx *ctx){
   pkt.hdr.data_len = 0;
   send_pkt(fd, &pkt, &ctx->srv_addr);
 
-  // exp backoff
+  // backoff
   first->retransmits++;
   first->rto_ms *= 2;
   if(first->rto_ms > RTO_MAX_MS) first->rto_ms = RTO_MAX_MS;

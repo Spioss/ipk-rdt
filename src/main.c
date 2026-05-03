@@ -23,33 +23,30 @@ static void usage(void) {
   printf("Usage:\n");
   // server
   printf("Server:");
-  printf(
-      "./ipk-rdt -s -p PORT [-a ADDRESS] [-o OUTPUT] [-w TIMEOUT] [-h | "
-      "--help]\n");
+  printf( "./ipk-rdt -s -p PORT [-a ADDRESS] [-o OUTPUT] [-w TIMEOUT] [-h | --help]\n");
   // client
   printf("Client:");
-  printf(
-      "./ipk-rdt -c -a HOST -p PORT [-i INPUT] [-w TIMEOUT] [-h | --help]\n");
+  printf("./ipk-rdt -c -a HOST -p PORT [-i INPUT] [-w TIMEOUT] [-h | --help]\n");
 }
 
-__attribute__((unused))static void print_config(const cfg* cfg) {
-  printf("Config:\n");
+// __attribute__((unused))static void print_config(const cfg* cfg) {
+//   printf("Config:\n");
 
-  printf("  mode    = ");
-  if (cfg->mode == 1) {
-    printf("server\n");
-  } else if (cfg->mode == 2) {
-    printf("client\n");
-  } else {
-    printf("unknown\n");
-  }
+//   printf("  mode    = ");
+//   if (cfg->mode == 1) {
+//     printf("server\n");
+//   } else if (cfg->mode == 2) {
+//     printf("client\n");
+//   } else {
+//     printf("unknown\n");
+//   }
 
-  printf("  addr    = %s\n", cfg->addr ? cfg->addr : "(null)");
-  printf("  port    = %d\n", cfg->port);
-  printf("  input   = %s\n", cfg->input ? cfg->input : "(stdin)");
-  printf("  output  = %s\n", cfg->output ? cfg->output : "(stdout)");
-  printf("  timeout = %d\n", cfg->timeout);
-}
+//   printf("  addr    = %s\n", cfg->addr ? cfg->addr : "(null)");
+//   printf("  port    = %d\n", cfg->port);
+//   printf("  input   = %s\n", cfg->input ? cfg->input : "(stdin)");
+//   printf("  output  = %s\n", cfg->output ? cfg->output : "(stdout)");
+//   printf("  timeout = %d\n", cfg->timeout);
+// }
 
 static int parse_args(int argc, char** argv, cfg* cfg) {
 
@@ -140,7 +137,7 @@ static int parse_args(int argc, char** argv, cfg* cfg) {
 }
 
 int main(int argc, char* argv[]) {
-  /* Signal handling */
+  // vSignal handling
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = sig_handler;
@@ -153,12 +150,12 @@ int main(int argc, char* argv[]) {
   }
 
   cfg main_config = {
-      .mode = 0,
-      .addr = NULL,
-      .port = -1,
-      .input = NULL,
-      .output = NULL,
-      .timeout = 1,
+    .mode = 0,
+    .addr = NULL,
+    .port = -1,
+    .input = NULL,
+    .output = NULL,
+    .timeout = 1,
   };
 
   int ret = parse_args(argc, argv, &main_config);
@@ -186,7 +183,7 @@ int main(int argc, char* argv[]) {
 
     if (out_fd != STDOUT_FILENO) close(out_fd);
 
-    // Clean up output file on failure
+    // clean up output file on failure
     if (ret != 0 && main_config.output && strcmp(main_config.output, "-") != 0) unlink(main_config.output);
 
     return ret;

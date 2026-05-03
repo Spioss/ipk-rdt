@@ -29,7 +29,7 @@ typedef enum {
 } server_state;
 
 
-// All server runtime state 
+// server context
 typedef struct {
     server_state state; // currenbt state 
     uint32_t conn_id; // id of the connection

@@ -22,7 +22,7 @@ int failed = 0;
 void test_syn_packet(void) {
     printf("\nTest 1: SYN packet (no payload)\n");
 
-    pkt_t orig = {0};
+    pkt orig = {0};
     orig.hdr.magic    = MAGIC;
     orig.hdr.type     = PKT_SYN;
     orig.hdr.conn_id  = 0xDEADBEEF;
@@ -34,7 +34,7 @@ void test_syn_packet(void) {
     int len = pkt_encode(&orig, buf);
     TEST("encode returns HDR_SIZE", len == HDR_SIZE);
 
-    pkt_t decoded = {0};
+    pkt decoded = {0};
     bool ok = pkt_decode(buf, &decoded, len);
     TEST("decode successful",  ok == true);
     TEST("magic matches",      decoded.hdr.magic   == MAGIC);
@@ -48,7 +48,7 @@ void test_syn_packet(void) {
 void test_data_packet(void) {
     printf("\nTest 2: DATA packet (with payload)\n");
 
-    pkt_t orig = {0};
+    pkt orig = {0};
     orig.hdr.magic    = MAGIC;
     orig.hdr.type     = PKT_DATA;
     orig.hdr.conn_id  = 0x12345678;
@@ -61,7 +61,7 @@ void test_data_packet(void) {
     int len = pkt_encode(&orig, buf);
     TEST("encode returns HDR_SIZE + 5", len == HDR_SIZE + 5);
 
-    pkt_t decoded = {0};
+    pkt decoded = {0};
     bool ok = pkt_decode(buf, &decoded, len);
     TEST("decode successful",   ok == true);
     TEST("type = DATA",         decoded.hdr.type     == PKT_DATA);
@@ -74,7 +74,7 @@ void test_data_packet(void) {
 void test_corrupted_packet(void) {
     printf("\nTest 3: Corrupted packet (bad checksum)\n");
 
-    pkt_t orig = {0};
+    pkt orig = {0};
     orig.hdr.magic    = MAGIC;
     orig.hdr.type     = PKT_DATA;
     orig.hdr.conn_id  = 0xABCD;
@@ -88,7 +88,7 @@ void test_corrupted_packet(void) {
     /* Flip a bit in the payload to simulate corruption */
     buf[HDR_SIZE + 1] ^= 0xFF;
 
-    pkt_t decoded = {0};
+    pkt decoded = {0};
     bool ok = pkt_decode(buf, &decoded, len);
     TEST("corrupted packet rejected", ok == false);
 }
@@ -97,7 +97,7 @@ void test_corrupted_packet(void) {
 void test_bad_magic(void) {
     printf("\nTest 4: Bad magic number\n");
 
-    pkt_t orig = {0};
+    pkt orig = {0};
     orig.hdr.magic    = MAGIC;
     orig.hdr.type     = PKT_SYN;
     orig.hdr.conn_id  = 1;
@@ -110,7 +110,7 @@ void test_bad_magic(void) {
     buf[0] = 0x00;
     buf[1] = 0x00;
 
-    pkt_t decoded = {0};
+    pkt decoded = {0};
     bool ok = pkt_decode(buf, &decoded, len);
     TEST("bad magic rejected", ok == false);
 }
@@ -121,7 +121,7 @@ void test_too_short(void) {
 
     /* Magic ok but buffer is shorter than HDR_SIZE */
     uint8_t buf[10] = {0x47, 0x47, 0x01};
-    pkt_t decoded = {0};
+    pkt decoded = {0};
     bool ok = pkt_decode(buf, &decoded, 10);
     TEST("too short packet rejected", ok == false);
 }
@@ -130,7 +130,7 @@ void test_too_short(void) {
 void test_max_payload(void) {
     printf("\nTest 6: Maximum payload (%d bytes)\n", MAX_PAYLOAD);
 
-    pkt_t orig = {0};
+    pkt orig = {0};
     orig.hdr.magic    = MAGIC;
     orig.hdr.type     = PKT_DATA;
     orig.hdr.conn_id  = 0x99999999;
@@ -145,7 +145,7 @@ void test_max_payload(void) {
     int len = pkt_encode(&orig, buf);
     TEST("encode returns MAX_PDU",  len == MAX_PDU);
 
-    pkt_t decoded = {0};
+    pkt decoded = {0};
     bool ok = pkt_decode(buf, &decoded, len);
     TEST("decode successful",       ok == true);
     TEST("data_len = MAX_PAYLOAD",  decoded.hdr.data_len == MAX_PAYLOAD);

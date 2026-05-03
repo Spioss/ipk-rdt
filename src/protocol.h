@@ -48,14 +48,13 @@ typedef struct {
     uint8_t   data[MAX_PAYLOAD];
 } pkt;
 
-// Encode pkt (hdr + data) into buf (wire format). buf must be at least HDR_SIZE + hdr.data_len bytes.
-// Computes and sets checksum. Returns total length.
+// encode pkt (hdr + data) into buf (wire format). buf must be at least HDR_SIZE + hdr.data_len bytes.
 int  pkt_encode(const pkt *pkt, uint8_t *buf);
 
-// Decode buf (wire format) into pkt. Returns true if valid (magic + checksum ok).
+// decode buf (wire format) into pkt, returns true if valid (magic + checksum ok).
 bool pkt_decode(const uint8_t *buf, pkt *pkt, int len);
 
-// Compute CRC32 over data of given length */
+// compute CRC32 over data of given length
 uint32_t crc32(const uint8_t *data, int len);
 
 #endif /* PROTOCOL_H */
