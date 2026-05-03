@@ -108,15 +108,42 @@ int create_client(const char *host, uint16_t port, addr_t *srv_addr){
 }
 
 int send(int fd, const pkt_t *pkt, const addr_t *dst){
-
+  uint8_t buf[MAX_PDU];
+  int len = pkt_encode(pkt, buf);
+  ssize_t s = sendto(fd, buf, len, 0, (const struct sockaddr *)&dst->addr, dst->addrlen);
+  return (int)s;
 }
-
 
 bool recieve(int fd, pkt_t *pkt, addr_t *src){
+  uint8_t buf[MAX_PDU + 64]; // Extra space to detect oversized pkts
+  src->addrlen = sizeof(src->addr);
+  ssize_t n = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&src->addr, &src->addrlen);
 
+  if(n < 0) return false;
+  if(n > MAX_PDU) return false; //oversized
+
+  return pkt_decode(buf, pkt, (int)n);
 }
 
+bool addr_equal(const addr_t *a, const addr_t *b){
+  if (a->addrlen != b->addrlen) return false;
 
+  const struct sockaddr *sa = (const struct sockaddr *)&a->addr;
+  const struct sockaddr *sb = (const struct sockaddr *)&b->addr;
+
+  if (sa->sa_family != sb->sa_family) return false;
+
+  if (sa->sa_family == AF_INET) {
+    const struct sockaddr_in *ia = (const struct sockaddr_in *)sa;
+    const struct sockaddr_in *ib = (const struct sockaddr_in *)sb;
+    return ia->sin_port == ib->sin_port && memcmp(&ia->sin_addr, &ib->sin_addr, sizeof(ia->sin_addr)) == 0;
+  } else if (sa->sa_family == AF_INET6) {
+    const struct sockaddr_in6 *ia = (const struct sockaddr_in6 *)sa;
+    const struct sockaddr_in6 *ib = (const struct sockaddr_in6 *)sb;
+    return ia->sin6_port == ib->sin6_port && memcmp(&ia->sin6_addr, &ib->sin6_addr, sizeof(ia->sin6_addr)) == 0;
+  }
+  return false;
+}
 
 // --- TIME ---
 void now_ts(struct timespec *ts){
