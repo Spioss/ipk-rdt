@@ -6,18 +6,18 @@
 #include "protocol.h"
 
 typedef struct {
-    const char *host;
-    uint16_t port;
-    int input_fd; // 1 stdin | 3 file succs open
-    int timeout_s;
+    const char      *host;
+    uint16_t        port;
+    int             input_fd; // 1 stdin | 3 file succs open
+    int             timeout_s;
 } client_config;
 
 
 // Client states
 typedef enum {
-    CS_CONNECTING,
-    CS_TRANSFERRING,
-    CS_FIN_WAIT,
+    CS_CONNECTING, // waiting SYN-ACK
+    CS_TRANSFERRING, // waiting ACK
+    CS_FIN_WAIT, // waiting FIN-ACK
     CS_DONE
 } client_state;
 
@@ -42,11 +42,11 @@ typedef struct {
 
 // Client context
 typedef struct {
-    client_state    state;
-    uint32_t        conn_id;
-    uint32_t        client_isn;
-    uint32_t        server_isn;
-    addr            srv_addr;
+    client_state    state; // current state 
+    uint32_t        conn_id; // id of the connection
+    uint32_t        client_initial; // client initial sequence number
+    uint32_t        server_initial; // server initial sequence number
+    addr            srv_addr; // server addresss
 
     send_slot       window[WINDOW_SIZE];
     uint32_t        send_base;   /* oldest un-acked byte */
@@ -54,7 +54,7 @@ typedef struct {
     uint32_t        total_read;  /* total bytes read from input */
     bool            eof;         /* no more input data */
 
-    rtt           rtt;
+    rtt           rtt; 
 
     struct timespec syn_sent_ts;
     long            syn_rto;
