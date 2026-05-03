@@ -40,20 +40,20 @@ typedef struct {
     uint16_t data_len; // 2B payload lenght
     uint32_t checksum; // 4b check sum
     uint8_t  padding; // padding (for 22 bytes)
-} pkt_hdr_t; // TOTAL 22b = header size
+} pkt_hdr; // TOTAL 22b = header size
 
 /* A full protocol data unit with header + payload */
 typedef struct {
-    pkt_hdr_t hdr;
+    pkt_hdr hdr;
     uint8_t   data[MAX_PAYLOAD];
-} pkt_t;
+} pkt;
 
 // Encode pkt (hdr + data) into buf (wire format). buf must be at least HDR_SIZE + hdr.data_len bytes.
 // Computes and sets checksum. Returns total length.
-int  pkt_encode(const pkt_t *pkt, uint8_t *buf);
+int  pkt_encode(const pkt *pkt, uint8_t *buf);
 
 // Decode buf (wire format) into pkt. Returns true if valid (magic + checksum ok).
-bool pkt_decode(const uint8_t *buf, pkt_t *pkt, int len);
+bool pkt_decode(const uint8_t *buf, pkt *pkt, int len);
 
 // Compute CRC32 over data of given length */
 uint32_t crc32(const uint8_t *data, int len);

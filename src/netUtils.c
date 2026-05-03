@@ -107,14 +107,14 @@ int create_client(const char *host, uint16_t port, addr_t *srv_addr){
     return fd_socket;
 }
 
-int send(int fd, const pkt_t *pkt, const addr_t *dst){
+int send(int fd, const pkt *pkt, const addr_t *dst){
   uint8_t buf[MAX_PDU];
   int len = pkt_encode(pkt, buf);
   ssize_t s = sendto(fd, buf, len, 0, (const struct sockaddr *)&dst->addr, dst->addrlen);
   return (int)s;
 }
 
-bool recieve(int fd, pkt_t *pkt, addr_t *src){
+bool recieve(int fd, pkt *pkt, addr_t *src){
   uint8_t buf[MAX_PDU + 64]; // Extra space to detect oversized pkts
   src->addrlen = sizeof(src->addr);
   ssize_t n = recvfrom(fd, buf, sizeof(buf), 0, (struct sockaddr *)&src->addr, &src->addrlen);

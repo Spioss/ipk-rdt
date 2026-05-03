@@ -63,7 +63,7 @@ static uint32_t read_u32(const  uint8_t *buf){
 // pkt_encode
 // takes a `pkt_t` (C structure) and writes it to a byte array in big-endian format
 // Big-endian = the most significant byte comes first 
-bool pkt_decode(const uint8_t *buf, pkt_t *pkt, int len){
+bool pkt_decode(const uint8_t *buf, pkt *pkt, int len){
   if(len < HDR_SIZE) return false; // not even complete header
 
   uint16_t magic_number = read_u16(buf + 0);
@@ -97,7 +97,7 @@ bool pkt_decode(const uint8_t *buf, pkt_t *pkt, int len){
   return true;
 }
 
-int pkt_encode(const pkt_t *pkt, uint8_t *buf){
+int pkt_encode(const pkt *pkt, uint8_t *buf){
   int total = HDR_SIZE + pkt->hdr.data_len;
 
   write_u16(buf + 0, pkt->hdr.magic);
