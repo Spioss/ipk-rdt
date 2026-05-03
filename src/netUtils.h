@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <time.h>
+#include <sys/time.h>
 #include "protocol.h"
 
 /* Generic address container (works for both IPv4 and IPv6) */
@@ -28,6 +28,12 @@ int send_pkt(int fd, const pkt *pkt, const addr *dst);
 
 // Receive a packet. Fills pkt and src. Returns true if packet valid. 
 bool recieve_pkt(int fd, pkt *pkt, addr *src);
+
+// Send a control packet (no payload)
+void send_controlPkt(int fd, uint8_t type, uint32_t conn_id, uint32_t seq, uint32_t ack, const addr *dst);
+
+// Clamp select timeout to nearest retransmit deadline 
+void clamp_tv(struct timeval *tv, long rto, const struct timespec *ts);
 
 // Compare two addr_t for equality (address and port).
 bool addr_equal(const addr *a, const addr *b);

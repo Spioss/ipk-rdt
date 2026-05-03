@@ -162,5 +162,24 @@ long elapsed_ms(const struct timespec *ts){
   return ts_diff_ms(&now, ts);
 }
 
+void send_controlPkt(int fd, uint8_t type, uint32_t conn_id, uint32_t seq, uint32_t ack, const addr *dst){
+  pkt p;
+  memset(&p, 0, sizeof(p));
+  p.hdr.magic    = MAGIC;
+  p.hdr.type     = type;
+  p.hdr.conn_id  = conn_id;
+  p.hdr.seq      = seq;
+  p.hdr.ack      = ack;
+  p.hdr.data_len = 0;
+  send_pkt(fd, &p, dst);
+}
 
-
+void clamp_tv(struct timeval *tv, long rto, const struct timespec *ts){
+  long remaining = rto - elapsed_ms(ts);
+  if (remaining < 1) remaining = 1;
+  long tv_ms = tv->tv_sec * 1000 + tv->tv_usec / 1000;
+  if (remaining < tv_ms) {
+    tv->tv_sec  = remaining / 1000;
+    tv->tv_usec = (remaining % 1000) * 1000;
+  }
+}
