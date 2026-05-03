@@ -18,7 +18,7 @@ test-protocol:
 NixDevShellName:
 	@echo c
 
-test:
+test: $(TARGET)
 	bash tests/test.sh
 
 clean:

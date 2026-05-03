@@ -254,7 +254,12 @@ The 1200-byte PDU limit reduces IP fragmentation risk on both IPv4 and IPv6 path
 
 ```sh
 make test
+
+or 
+
+make test-protocol 
 ```
+> **test-protocol:** only tests protocol implementation, tests were used in dev
 
 ### Test Environment
 
@@ -278,46 +283,42 @@ make test
 
 #### Integration Tests (`tests/test_rdt.sh`)
 
+#### Integration Tests (`tests/test_rdt.sh`)
+
 | # | What | Why | Condition |
 |---|------|-----|-----------|
 | 1 | Small string ("hello world") | Basic correctness | Content matches exactly |
 | 2 | Empty input | Edge case — zero-byte transfer | 0 bytes received |
-| 3 | 1 KB random binary | Binary data correctness | MD5 matches |
-| 4 | 1 MB random binary | Larger transfer, multi-segment window | MD5 matches |
-| 5 | 10 MB random binary | Stream throughput | MD5 matches |
-| 6 | IPv6 (::1) | IPv6 code path | Content matches |
-| 7 | File to stdout | stdout output mode | Content matches |
-| 8 | Client timeout (no server) | Timeout termination | Non-zero exit code |
-| 9 | Server timeout (no client) | Timeout termination | Non-zero exit code |
-| 10 | 10% packet loss (`tc netem`) | Retransmission correctness | MD5 matches |
-| 11 | 50% reorder + 10 ms delay (`tc netem`) | Out-of-order handling | MD5 matches |
+| 3 | Single byte | Minimal transfer | Content matches |
+| 4 | Exactly 1178 bytes (one full segment) | Segment boundary | MD5 matches |
+| 5 | 1179 bytes (just over one segment) | Segment boundary | MD5 matches |
+| 6 | 1KB random binary | Binary data correctness | MD5 matches |
+| 7 | 32KB (exactly one full window) | Window boundary | MD5 matches |
+| 8 | 1MB random binary | Larger transfer | MD5 matches |
+| 9 | 10MB random binary | Stream throughput | MD5 matches |
+| 10 | Text file with newlines | Text correctness | Content matches |
+| 11 | Binary file with null bytes | Binary correctness | MD5 matches |
+| 12 | IPv4 explicit (127.0.0.1) | IPv4 code path | Content matches |
+| 13 | IPv6 (::1) | IPv6 code path | Content matches |
+| 14 | Hostname resolution (localhost) | DNS resolution | Content matches |
+| 15 | File to stdout | stdout output mode | Content matches |
+| 16 | stdin to file | stdin input mode | Content matches |
+| 17 | stdin to stdout | Full pipe mode | Content matches |
+| 18 | Client timeout (no server) | Timeout termination | Non-zero exit code |
+| 19 | Server timeout (no client) | Timeout termination | Non-zero exit code |
+| 20 | -w flag affects timeout duration | Timeout correctness | ~2s elapsed for -w 2 |
+| 21 | Server bind on specific address | Bind correctness | Content matches |
+| 22 | Client exit code 0 on success | Exit code correctness | Exit code 0 |
+| 23 | Server exit code 0 on success | Exit code correctness | Exit code 0 |
+| 24 | Invalid port (0) | CLI validation | Non-zero exit code |
+| 25 | Missing -p PORT | CLI validation | Non-zero exit code |
+| 26 | -s and -c together | CLI validation | Non-zero exit code |
+| 27 | 10% packet loss (`tc netem`) | Retransmission correctness | MD5 matches |
+| 28 | Packet reordering (`tc netem`) | Out-of-order handling | MD5 matches |
+| 29 | 20% packet duplication (`tc netem`) | Duplicate handling | MD5 matches |
+| 30 | Combined: loss + reorder + delay | Robustness under impairment | MD5 matches |
 
-Tests 10 and 11 require `tc` and `sudo`; they are skipped automatically when unavailable.
-
-### Sample Output
-
-```
-Test 1: Small string transfer
-  [OK] content matches
-Test 2: Empty input
-  [OK] empty file received correctly
-Test 3: 1KB binary file
-  [OK] md5sum matches
-Test 4: 1MB binary file
-  [OK] md5sum matches
-Test 5: 10MB binary file
-  [OK] md5sum matches
-Test 6: IPv6 transfer
-  [OK] IPv6 transfer ok
-Test 7: File to stdout
-  [OK] stdout output ok
-Test 8: Client timeout when no server
-  [OK] client exited with non-zero code (1)
-Test 9: Server timeout when no client
-  [OK] server exited with non-zero code (1)
-
-=== Results: 9 passed, 0 failed ===
-```
+Tests 27–30 require `tc` and `sudo`; they are skipped automatically when unavailable.
 
 ---
 
