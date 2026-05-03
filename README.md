@@ -1,7 +1,7 @@
 # ipk-rdt — Reliable Data Transfer over UDP
 
 **Author:** Lukas Mader  
-**Course:** IPK 2024/2025 — Project 2  
+**Course:** IPK 2025/2026 — Project 2  
 
 ---
 
@@ -131,43 +131,55 @@ Both the client's and server's initial sequence numbers are also generated rando
 
 ## Session Establishment and Termination
 
-### Three-Way Handshake (SYN → SYN-ACK → ACK)
+### Three-Way Handshake
 
 ```
 Client                          Server
   |                                |
-  |  SYN (seq=ISN_c)               |
-  |------------------------------->|
-  |                                |  SS_SYN_RECEIVED
-  |  SYNACK (seq=ISN_s, ack=ISN_c+1)|
-  |<-------------------------------|
+  |------ SYN (seq=ISN_c) -------->|
   |                                |
-  |  ACK (ack=ISN_s+1)             |
-  |------------------------------->|
-  |                                |  SS_TRANSFERRING
-  |   <DATA TRANSFER>              |
+  |<----- SYNACK (seq=ISN_s, ------|
+  |        ack=ISN_c+1)            |
+  |                                |
+  |------ ACK (ack=ISN_s+1) ------>|
+  |                                |
+  |        <DATA TRANSFER>         |
 ```
 
-The server retransmits SYN-ACK with exponential backoff if it does not receive the final ACK within the RTO. The client retransmits SYN similarly.
+The server retransmits SYNACK with exponential backoff if the final ACK does not arrive within RTO. The client retransmits SYN similarly.
 
-### Session Teardown (FIN → FIN-ACK → ACK)
+### Session Teardown
 
 ```
 Client                          Server
   |                                |
-  |  FIN (seq=total_bytes)         |
-  |------------------------------->|
-  |                                |  SS_FIN_RECEIVED
-  |  FINACK (ack=total_bytes+1)    |
-  |<-------------------------------|
+  |------ FIN (seq=total_bytes) -->|
   |                                |
-  |  ACK                           |
-  |------------------------------->|
-  |                                |  SS_DONE → exit 0
-  CS_DONE → exit 0
+  |<----- FINACK (ack=total+1) ----|
+  |                                |
+  |------ ACK --------------------->|
+  |                                |
+exit 0                          exit 0
 ```
 
-The client waits 50 ms after sending the final ACK to allow it to be received before closing. The server retransmits FIN-ACK with exponential backoff until the final ACK arrives or the timeout expires; if it times out while waiting for the final ACK it still exits with code 0 (transfer is considered complete).
+The client waits 50 ms after sending the final ACK before closing. The server retransmits FINACK until the ACK arrives or the timeout expires; a timeout at this point is treated as success.
+
+---
+
+## UML Diagrams
+
+### Sequence Diagram
+
+![sequence diagram](assets/sequence_diagram.svg)
+
+### Server State Machine
+
+![server state machine](assets/server_state_machine.svg)
+
+### Client State Machine
+
+![client state machine](assets/client_state_machine.svg)
+
 
 ---
 
@@ -207,7 +219,7 @@ RTO is clamped to the range **[50 ms, 10 000 ms]**; the initial RTO before the f
 - Each send-window slot has its own per-segment RTO timer.
 - If a segment's timer expires, it is retransmitted and its RTO is doubled (exponential backoff).
 - The global **progress timeout** (`-w TIMEOUT` seconds without any new ACK) terminates the transfer with a non-zero exit code.
-- SYN and SYN-ACK retransmissions use the same initial RTO and the same exponential backoff.
+- SYN and SYNACK retransmissions use the same initial RTO and the same exponential backoff.
 - The event loop uses `select(2)` with a dynamically computed timeout equal to the nearest pending retransmit deadline (or 10 ms for the client, 50 ms for the server as a floor), avoiding busy-waiting.
 
 ---
@@ -241,11 +253,7 @@ The 1200-byte PDU limit reduces IP fragmentation risk on both IPv4 and IPv6 path
 ### Running Tests
 
 ```sh
-# End-to-end integration tests (requires ./ipk-rdt binary)
 make test
-
-# Protocol unit tests (encode/decode/checksum)
-make test-protocol
 ```
 
 ### Test Environment
@@ -259,8 +267,6 @@ make test-protocol
 
 #### Unit Tests (`tests/test_protocol.c`)
 
-Tests exercise `pkt_encode` / `pkt_decode` / `crc32` directly:
-
 | # | What | Why | Expected |
 |---|------|-----|----------|
 | 1 | SYN packet (no payload) | Verify control-packet round-trip | Decoded fields match original |
@@ -270,7 +276,7 @@ Tests exercise `pkt_encode` / `pkt_decode` / `crc32` directly:
 | 5 | Buffer shorter than header | Guard against truncated packets | `pkt_decode` returns false |
 | 6 | Max payload (1178 bytes) | Boundary check | Full round-trip succeeds |
 
-#### Integration Tests (`tests/test.sh`)
+#### Integration Tests (`tests/test_rdt.sh`)
 
 | # | What | Why | Condition |
 |---|------|-----|-----------|
@@ -293,69 +299,24 @@ Tests 10 and 11 require `tc` and `sudo`; they are skipped automatically when una
 ```
 Test 1: Small string transfer
   [OK] content matches
-
 Test 2: Empty input
   [OK] empty file received correctly
-
 Test 3: 1KB binary file
   [OK] md5sum matches
-
 Test 4: 1MB binary file
   [OK] md5sum matches
-
 Test 5: 10MB binary file
   [OK] md5sum matches
-
 Test 6: IPv6 transfer
   [OK] IPv6 transfer ok
-
 Test 7: File to stdout
   [OK] stdout output ok
-
 Test 8: Client timeout when no server
   [OK] client exited with non-zero code (1)
-
 Test 9: Server timeout when no client
   [OK] server exited with non-zero code (1)
 
 === Results: 9 passed, 0 failed ===
-```
-
----
-
-## State Machines
-
-### Server State Machine
-
-```
-SS_LISTENING
-    │  (SYN received)
-    ▼
-SS_SYN_RECEIVED   ←── retransmit SYN-ACK on timeout
-    │  (ACK received)
-    ▼
-SS_TRANSFERRING   ←── receive DATA, buffer, write, send ACK
-    │  (FIN received, all data delivered)
-    ▼
-SS_FIN_RECEIVED   ←── retransmit FIN-ACK on timeout
-    │  (final ACK received, or timeout)
-    ▼
-SS_DONE  →  exit 0
-```
-
-### Client State Machine
-
-```
-CS_CONNECTING   ←── retransmit SYN on timeout
-    │  (SYN-ACK received)
-    ▼
-CS_TRANSFERRING ←── fill window, retransmit expired slots
-    │  (EOF + all ACKed)
-    ▼
-CS_FIN_WAIT     ←── retransmit FIN on timeout
-    │  (FIN-ACK received)
-    ▼
-CS_DONE  →  exit 0
 ```
 
 ---
@@ -370,6 +331,20 @@ CS_DONE  →  exit 0
 
 ---
 
+## AI Assistance
+
+The following parts of this project were developed with the assistance of AI:
+
+- `tests/test_protocol.c` — unit test file was generated with AI assistance
+- `tests/test_rdt.sh` — integration test script was generated with AI assistance
+- `README.md` — documentation structure and wording was assisted by AI
+- Sliding window design — AI was consulted during design decisions
+- AI was also used as a learning resource for topic.
+
+All generated code and documentation was reviewed, understood, and adapted by the author.
+
+---
+
 ## References
 
 1. POSTEL, J. *RFC 768: User Datagram Protocol*. Internet Engineering Task Force, 1980.  
@@ -378,9 +353,24 @@ CS_DONE  →  exit 0
 2. POSTEL, J. *RFC 793: Transmission Control Protocol*. Internet Engineering Task Force, 1981.  
    Online: https://datatracker.ietf.org/doc/html/rfc793
 
-3. ALLMAN, M., PAXSON, V., BLANTON, E. *RFC 6298: Computing TCP's Retransmission Timer*. Internet Engineering Task Force, 2011.  
+3. ALLMAN, M., PAXSON, V., BLANTON, E. *RFC 6298: Computing TCP's Retransmission Timer*. 
+   Internet Engineering Task Force, 2011.  
    Online: https://datatracker.ietf.org/doc/html/rfc6298
 
 4. KUROSE, J. F., ROSS, K. W. *Computer Networking: A Top-Down Approach*. 8th ed. Pearson, 2021.
 
-5. Linux manual page: `tc-netem(8)`. Online: https://man7.org/linux/man-pages/man8/tc-netem.8.html
+5. Linux manual page: *tc-netem(8)*.  
+   Online: https://man7.org/linux/man-pages/man8/tc-netem.8.html
+
+6. JACOBSON, V. Congestion avoidance and control. *ACM SIGCOMM Computer Communication Review*, 
+   1988, vol. 18, no. 4, pp. 314–329.  
+   Online: https://dl.acm.org/doi/10.1145/52325.52356
+
+7. OSDev Wiki. *CRC32*.  
+   Online: https://wiki.osdev.org/CRC32
+
+8. LUCAS, J. *Understanding CRC32*.  
+   Online: https://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art008
+
+9. GeeksforGeeks. *Karn's Algorithm for Optimizing TCP*.  
+   Online: https://www.geeksforgeeks.org/computer-networks/karns-algorithm-for-optimizing-tcp/
