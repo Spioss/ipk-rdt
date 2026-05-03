@@ -15,6 +15,9 @@ test-protocol:
 	./tests/test_protocol
 	rm -f tests/test_protocol
 
+NixDevShellName:
+	@echo c
+
 test:
 	bash tests/test.sh
 

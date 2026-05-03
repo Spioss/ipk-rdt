@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
@@ -7,7 +8,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <sys/time.h>
-#include <sys/random.h>
+#include <time.h>
 
 #include "server.h"
 #include "netUtils.h"
@@ -277,7 +278,8 @@ int run_server(const server_config *cfg){
   ctx.timeout_s = cfg->timeout_s;
   ctx.synack_rto = RTO_INITIAL_MS;
   ctx.finack_rto = RTO_INITIAL_MS;
-  getrandom(&ctx.server_initial, sizeof(ctx.server_initial), 0);
+  srand((unsigned)time(NULL));
+  ctx.server_initial = (uint32_t)rand();
   now_ts(&ctx.progress_ts);
 
   while(!g_terminated){

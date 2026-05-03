@@ -6,7 +6,6 @@
 #include <time.h>
 #include <sys/select.h>
 #include <signal.h>
-#include <sys/random.h>
 #include <math.h>
 
 #include "client.h"
@@ -290,8 +289,9 @@ int run_client(const client_config *cfg){
   ctx.input_fd = cfg->input_fd;
   ctx.srv_addr = srv_addr;
   ctx.syn_rto = RTO_INITIAL_MS;
-  getrandom(&ctx.conn_id, sizeof(ctx.conn_id), 0);
-  getrandom(&ctx.client_initial, sizeof(ctx.client_initial), 0);
+  srand((unsigned)time(NULL));
+  ctx.conn_id = (uint32_t)rand();
+  ctx.client_initial = (uint32_t)rand();
   rtt_init(&ctx.rtt);
   now_ts(&ctx.progress_ts);
 
