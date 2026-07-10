@@ -63,9 +63,9 @@ static int handle_data(int fd, server_ctx *ctx, const pkt *pkt){
   // if outside window drop 
   uint32_t win_end = ctx->rcv_expected + (uint32_t)(WINDOW_SIZE * MAX_PAYLOAD);
   if (seq >= win_end) return 0;
-  // (client will send again when we move window)
+  // (client will send again when move window)
 
-  // store into recieve buf (if slot is occupied we ignore)
+  // store into recieve buf (if slot is occupied ignore)
   int idx = (int)((seq / MAX_PAYLOAD) % WINDOW_SIZE);
   if(!ctx->rcv_buf[idx].occupied){
     memcpy(ctx->rcv_buf[idx].data, pkt->data, data_len);
