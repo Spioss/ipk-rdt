@@ -45,7 +45,7 @@ typedef struct {
 /* A full protocol data unit with header + payload */
 typedef struct {
     pkt_hdr hdr;
-    uint8_t   data[MAX_PAYLOAD];
+    uint8_t data[MAX_PAYLOAD];
 } pkt;
 
 // encode pkt (hdr + data) into buf (wire format). buf must be at least HDR_SIZE + hdr.data_len bytes.
